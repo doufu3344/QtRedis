@@ -23,7 +23,7 @@ public:
     } Reply;
 
     bool openConnection();
-    bool closeConnection();
+    void closeConnection();
     bool isConnected();
 
     void publish(QString, QString);

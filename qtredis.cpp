@@ -31,6 +31,17 @@ bool QtRedis::openConnection()
     return true;
 }
 
+void QtRedis::closeConnection()
+{
+	reader->disconnectHost();
+}
+
+bool QtRedis::isConnected()
+{
+	return reader->isConnected();
+}
+
+
 void QtRedis::connectHost(const QString &host, const quint16 port)
 {
     reader->connectHost(host,port);
