@@ -104,25 +104,43 @@ void QtRedis::punsubscribe(QString channel)
 void QtRedis::response(QVariant response)
 {
     QStringList res = response.toStringList();
-
+	qDebug() << "server's response:" << res;
     Reply reply;
 
-    if (res[1] == "message")
+	responseData.clear();
+	if (res.isEmpty())
+		return;
+
+	if (res.size() > 6
+		&& res[0] == "list"
+ 		&& res[2] == "bulk"
+		&& res[3] == "message"
+		)
     {
-        reply.type = res[0];
-        reply.message = res[1];
-        reply.channel = res[2];
-        reply.value = res[3];
+        reply.type = "message";
+        reply.message = res[3];
+        reply.channel = res[5];
+		QStringList msg;
+		for (int i = 6; i < res.size(); ++i)
+			msg << res[i];
+		reply.value = msg;
 
         emit returnData(reply);
     }
-    else if (res[1] == "pmessage")
-    {
-        reply.type = res[0];
-        reply.message = res[1];
-        reply.pattern = res[2];
-        reply.channel = res[3];
-        reply.value = res[4];
+    else if (res.size() > 8
+		&& res[0] == "list"
+ 		&& res[2] == "bulk"
+		&& res[3] == "pmessage"
+		)
+	{
+        reply.type = "pmessage";
+        reply.message = res[3];
+        reply.pattern = res[5];
+        reply.channel = res[7];
+		QStringList msg;
+		for (int i = 8; i < res.size(); ++i)
+			msg << res[i];
+		reply.value = msg;
 
         emit returnData(reply);
     }
@@ -155,14 +173,15 @@ QtRedis::Reply QtRedis::command(QString cmd)
 			reply.type = responseData[0];
 			reply.value = responseData[1].toInt();
 		}
-		else if (responseData[0] == "list")
+		else if (responseData[0] == "list" && responseData.size() > 1)
 		{
 			reply.type = responseData[0];
 
+			int len = responseData[1].toInt();
 			QStringList list;
-			for (int i = 1; i < responseData.length(); i++)
+			for (int i = 0; list.size() < len && i + 3 < responseData.size() ; i+=2)
 			{
-				list << responseData[i];
+				list << responseData[i + 3];
 			}
 
 			reply.value = list;
@@ -440,7 +459,7 @@ QMap<QString,QVariant> QtRedis::hgetall(QString key)
     QMap<QString,QVariant> keypairs;
     QStringList list = reply.value.toStringList();
 
-    for(int i=0; i<list.length(); i++)
+    for(int i=0; i<list.length()-1; i++)
     {
         QString k = list[i];
         i++;

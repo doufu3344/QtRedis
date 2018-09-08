@@ -138,65 +138,58 @@ void Reader::sendData(const QString &data)
 
 void Reader::readLine(const QString &reply)
 {
-    QChar first=reply.at(0);
-    QString value;
-    QStringList result;
+	QStringList result;
 
-    if(first=='+')
-    {
-        value=reply.mid(1);
-        value.chop(2);
+	QString reply_bak = reply;
+	if (reply_bak.endsWith("\r\n"))
+	{
+		reply_bak = reply_bak.left(reply_bak.length() - 2);
+	}
+	QStringList splited = reply_bak.split("\r\n");
+	QString value;
+	while (!splited.empty())
+	{
+		QString section = splited.first();
+		splited.removeFirst();
 
-        result << "string" << value;
-    }
-    else if(first=='-')
-    {
-        value=reply.mid(1);
-        value.chop(2);
+		if (section.isEmpty()){
+			result << "nil";
+			continue;
+		}
 
-        result << "error" << value;
-    }
-    else if(first==':')
-    {
-        value=reply.mid(1);
-        value.chop(2);
+		QChar symbol = section[0];
+		value = section.mid(1);
+		if (symbol == '+')
+		{
+			result << "string" << value;
+		}
+		else if (symbol == '-')
+		{
+			result << "error" << value;
+		}
+		else if (symbol == ':')
+		{
+			result << "integer" << value;
+		}
+		else if (symbol == '$')
+		{
+			result << "bulk";
+			if (value.left(2) == "-1")
+			{
+				result << "nil";
+			}
+			continue;//value represents the string's length, no use
+		}
+		else if (symbol == "*")
+		{
+			result << "list" << value;
+		}
+		else
+		{
+			result << section;
+		}
+	}
 
-        result << "integer" << value;
-
-    } else if(first=='$')
-    {
-        int index=reply.indexOf("\r\n");
-        int len=reply.mid(1,index-1)
-                     .toInt();
-        if(len==-1)
-            value="NULL";
-        else
-            value=reply.mid(index+2,len);
-        result<< "bulk" << value;
-
-    } else if(first=='*')
-    {
-        int index=reply.indexOf("\r\n");
-        int count=reply.mid(1,index-1)
-                       .toInt();
-        int i;
-        int len;
-        int pos=index+2;
-        result << "list";
-
-        for(i=0;i<count;i++)
-        {
-            index=reply.indexOf("\r\n",pos);
-            len=reply.mid(pos+1,index-pos-1)
-                     .toInt();
-            if(len==-1)
-                result<<"NULL";
-            else
-                result<<reply.mid(index+2,len);
-
-            pos=index+2+len+2;
-        }
-    }
 
     emit response(result);
 }
