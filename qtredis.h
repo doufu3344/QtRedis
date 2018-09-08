@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QStringList>
-#include <QEventLoop>
+#include "reqeventloop.h"
 
 #include "reader.h"
 

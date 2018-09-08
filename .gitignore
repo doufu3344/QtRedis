@@ -1,0 +1,16 @@
+*.sln
+*.vcxproj*
+*.pro.user
+*.opensdf
+*.sdf
+*.o
+*.a
+*.exe
+*.so
+*.suo
+
+Makefile
+Makefile.*
+
+debug/
+release/

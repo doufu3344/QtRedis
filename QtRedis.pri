@@ -2,8 +2,10 @@ DEPENDPATH += $$PWD
 INCLUDEPATH += $$PWD
 
 SOURCES += qtredis.cpp \
-    reader.cpp
+    reader.cpp \
+    reqeventloop.cpp
 
 HEADERS += QtRedis \
     qtredis.h \
-    reader.h
+    reader.h \
+    reqeventloop.h

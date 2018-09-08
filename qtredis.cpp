@@ -1,4 +1,5 @@
 #include "qtredis.h"
+#include <QTimer>
 
 QtRedis::QtRedis(QString host, int port, QObject *parent) : QObject(parent)
 {
@@ -18,7 +19,7 @@ bool QtRedis::openConnection()
 {
     connectHost(host,port);
 
-    QEventLoop loop;
+    ReqEventLoop loop;
     connect(reader, SIGNAL(connected()), &loop, SLOT(quit()));
     loop.exec();
 
@@ -137,32 +138,41 @@ QtRedis::Reply QtRedis::command(QString cmd)
 
     reader->sendData(cmd);
 
-    QEventLoop loop;
+    ReqEventLoop loop;
     connect(reader, SIGNAL(response(QVariant)), &loop, SLOT(quit()));
     loop.exec();
 
-    if(responseData[0] == "integer")
-    {
-        reply.type = responseData[0];
-        reply.value = responseData[1].toInt();
-    }
-    else if(responseData[0] == "list")
-    {
-        reply.type = responseData[0];
+	if (loop.isTimeout())
+	{
+		reply.type = "timeout";
+        reply.message = "connect or wait response timeout";
+		reply.pattern = cmd;
+	}
+	else
+	{
+		if (responseData[0] == "integer")
+		{
+			reply.type = responseData[0];
+			reply.value = responseData[1].toInt();
+		}
+		else if (responseData[0] == "list")
+		{
+			reply.type = responseData[0];
 
-        QStringList list;
-        for(int i=1; i < responseData.length(); i++)
-        {
-            list << responseData[i];
-        }
+			QStringList list;
+			for (int i = 1; i < responseData.length(); i++)
+			{
+				list << responseData[i];
+			}
 
-        reply.value = list;
-    }
-    else
-    {
-        reply.type = responseData[0];
-        reply.value = responseData[1];
-    }
+			reply.value = list;
+		}
+		else
+		{
+			reply.type = responseData[0];
+			reply.value = responseData[1];
+		}
+	}
 
     return reply;
 }
